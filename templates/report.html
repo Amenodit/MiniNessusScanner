@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Report - {{ data.target }}</title>
+    
+    <!-- Link to CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="report-container">
+        
+        <!-- HEADER SECTION -->
+        <header style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; padding-bottom: 20px; margin-bottom: 30px;">
+            <div>
+                <h2>TARGET: <span class="highlight">{{ data.target }}</span></h2>
+                <div class="meta">
+                    <strong>IP:</strong> {{ data.ip }} <br>
+                    <strong>OS Detected:</strong> {{ data.os_info }}
+                </div>
+            </div>
+            <div style="text-align: right;">
+                {% if data.vulns %}
+                <span style="font-size: 2.5rem; font-weight: bold; color: #da3633;">
+                    {{ data.vulns|length }}
+                </span>
+                {% else %}
+                <span style="font-size: 2.5rem; font-weight: bold; color: #238636;">
+                    {{ data.vulns|length }}
+                </span>
+                {% endif %}
+                <div class="meta" style="font-size: 0.9rem; color: #8b949e;">Issues Found</div>
+            </div>
+        </header>
+
+        <!-- CHARTS SECTION -->
+        <div class="section" style="display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
+            <!-- Severity Chart -->
+            <div style="flex: 1; min-width: 300px; background: #161b22; padding: 20px; border-radius: 8px; border: 1px solid #30363d;">
+                <h3 style="margin-top: 0; font-size: 1rem; color: #8b949e;">Vulnerability Severity</h3>
+                <div style="height: 200px; position: relative;">
+                    <canvas id="vulnChart"></canvas>
+                </div>
+            </div>
+            <!-- Port Chart -->
+            <div style="flex: 1; min-width: 300px; background: #161b22; padding: 20px; border-radius: 8px; border: 1px solid #30363d;">
+                <h3 style="margin-top: 0; font-size: 1rem; color: #8b949e;">Port Analysis</h3>
+                <div style="height: 200px; position: relative;">
+                    <canvas id="portChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPEN PORTS TABLE -->
+        <div class="section">
+            <h3>Open Ports & Services</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Port</th>
+                        <th>State</th>
+                        <th>Service Banner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for port in data.open_ports %}
+                    <tr>
+                        <td>{{ port }}</td>
+                        <td class="status-open">OPEN</td>
+                        <td>{{ data.services[port] }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3">No open ports found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- VULNERABILITY CARDS -->
+        <div class="section">
+            <h3>Detailed Findings</h3>
+            {% if data.vulns %}
+                <div class="vuln-grid">
+                {% for vuln in data.vulns %}
+                    <!-- We use |lower to ensure class match (e.g. 'High' -> 'high') -->
+                    <div class="vuln-card {{ vuln.severity|lower }}">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0;">{{ vuln.name }}</h4>
+                            <span class="badge" style="background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">{{ vuln.severity }}</span>
+                        </div>
+                        <p style="margin: 0; color: #8b949e; font-size: 0.9rem;">{{ vuln.description }}</p>
+                    </div>
+                {% endfor %}
+                </div>
+            {% else %}
+                <div class="safe-box" style="padding: 20px; background: rgba(35, 134, 54, 0.1); border: 1px solid #238636; color: #238636; border-radius: 6px; text-align: center;">
+                    ✓ System appears secure against basic checks.
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- ACTION BUTTONS -->
+        <div style="margin-top: 50px; text-align: center; border-top: 1px solid #30363d; padding-top: 30px;">
+            <a href="/download_pdf" class="btn-pdf">⬇ Download PDF Report</a>
+            <a href="/dashboard" class="btn-back" style="margin-left: 20px;">↻ Run New Scan</a>
+        </div>
+
+    </div>
+
+    <!-- DATA INJECTION (Hidden Scripts) -->
+    <!-- This method avoids JavaScript syntax errors by separating data from code -->
+    <script id="stats-data" type="application/json">
+        {{ data.stats | tojson | safe }}
+    </script>
+    <script id="ports-data" type="application/json">
+        {{ data.open_ports | length }}
+    </script>
+
+    <!-- JAVASCRIPT FOR GRAPHS -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Safe Data Extraction
+            let rawStats = {};
+            let portCount = 0;
+
+            try {
+                // Parse JSON from the script tags
+                rawStats = JSON.parse(document.getElementById('stats-data').textContent) || {};
+                portCount = parseInt(document.getElementById('ports-data').textContent) || 0;
+            } catch (e) {
+                console.warn("Could not parse stats data, graphs may be empty.", e);
+            }
+
+            // 2. Map stats with defaults
+            const stats = {
+                critical: rawStats.critical || 0,
+                high: rawStats.high || 0,
+                medium: rawStats.medium || 0,
+                low: rawStats.low || 0,
+                safe: rawStats.safe || 0
+            };
+
+            // 3. Vulnerability Doughnut Chart
+            const ctx1 = document.getElementById('vulnChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Critical', 'High', 'Medium', 'Low', 'Safe'],
+                    datasets: [{
+                        data: [stats.critical, stats.high, stats.medium, stats.low, stats.safe],
+                        backgroundColor: [
+                            '#800080', // Purple (Critical)
+                            '#da3633', // Red (High)
+                            '#d29922', // Yellow (Medium)
+                            '#238636', // Green (Low)
+                            '#238636'  // Green (Safe)
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#c9d1d9', font: { family: 'JetBrains Mono' } }
+                        }
+                    }
+                }
+            });
+
+            // 4. Port Bar Chart
+            const ctx2 = document.getElementById('portChart').getContext('2d');
+            new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['Open Ports', 'Scanned (Sample)'],
+                    datasets: [{
+                        label: 'Count',
+                        data: [portCount, 20],
+                        backgroundColor: ['#238636', '#30363d'],
+                        borderRadius: 4,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { 
+                        y: { 
+                            beginAtZero: true,
+                            ticks: { color: '#c9d1d9', font: { family: 'JetBrains Mono' } }, 
+                            grid: { color: '#30363d' } 
+                        }, 
+                        x: { 
+                            ticks: { color: '#c9d1d9', font: { family: 'JetBrains Mono' } }, 
+                            grid: { display: false } 
+                        } 
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

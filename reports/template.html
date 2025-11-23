@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vulnerability Scan Report - {{ target }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f4; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; border-bottom: 2px solid #d9534f; padding-bottom: 10px; }
+        h2 { color: #555; margin-top: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #333; color: white; }
+        .vuln { background-color: #ffe6e6; border-left: 5px solid #d9534f; padding: 10px; margin-bottom: 10px; }
+        .safe { color: green; }
+        .danger { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mini Nessus Scan Report</h1>
+        <p><strong>Target:</strong> {{ target }}</p>
+        <p><strong>Date:</strong> {{ date }}</p>
+        <p><strong>Detected OS:</strong> {{ os_info }}</p>
+
+        <h2>Open Ports & Services</h2>
+        <table>
+            <tr><th>Port</th><th>Service Banner</th></tr>
+            {% for port, banner in services.items() %}
+            <tr>
+                <td>{{ port }}</td>
+                <td>{{ banner }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <h2>Vulnerabilities Detected</h2>
+        {% if vulns %}
+            {% for v in vulns %}
+            <div class="vuln">
+                <span class="danger">[{{ v.severity }}]</span> <strong>{{ v.name }}</strong><br>
+                {{ v.description }}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="safe">No obvious vulnerabilities found.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

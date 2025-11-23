@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MiniNessus | Enterprise Security</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .hero { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background: radial-gradient(circle at center, #1a222e 0%, #0d1117 100%); }
+        .hero h1 { font-size: 4rem; margin-bottom: 10px; text-shadow: 0 0 20px rgba(35, 134, 54, 0.5); }
+        .hero p { font-size: 1.2rem; color: #8b949e; max-width: 600px; margin-bottom: 40px; }
+        .cta-btn { background: #238636; color: white; padding: 15px 40px; font-size: 1.2rem; text-decoration: none; border-radius: 50px; transition: transform 0.2s, box-shadow 0.2s; }
+        .cta-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(35, 134, 54, 0.6); }
+        .grid-bg { position: absolute; width: 100%; height: 100%; background-image: linear-gradient(rgba(48, 54, 61, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(48, 54, 61, 0.2) 1px, transparent 1px); background-size: 50px 50px; z-index: -1; }
+    </style>
+</head>
+<body>
+    <div class="grid-bg"></div>
+    <div class="hero">
+        <h1>Mini<span class="highlight">Nessus</span></h1>
+        <p>Next-Generation Automated Vulnerability Assessment. Secure your infrastructure with precision scanning engine.</p>
+        <a href="/dashboard" class="cta-btn">LAUNCH CONSOLE</a>
+    </div>
+</body>
+</html>

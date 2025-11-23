@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MiniNessus | Cyber Scanner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="scanner-box">
+            <h1>Mini<span class="highlight">Nessus</span></h1>
+            <p>Advanced Vulnerability Assessment Engine</p>
+            {% if error %} <div class="error-msg">{{ error }}</div> {% endif %}
+            <form action="/scan" method="POST" onsubmit="document.getElementById('loader').classList.remove('hidden');">
+                <input type="text" name="target" placeholder="Enter Target IP (e.g., scanme.nmap.org)" required>
+                <button type="submit">INITIATE SCAN</button>
+            </form>
+            <div id="loader" class="hidden"><div class="spinner"></div><p>Scanning Target...</p></div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,5 @@
+requests
+scapy
+jinja2
+colorama
+flask

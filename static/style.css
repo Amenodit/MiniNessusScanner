@@ -1,0 +1,44 @@
+:root { --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --green: #238636; --red: #da3633; }
+body { font-family: 'JetBrains Mono', monospace; background: var(--bg); color: var(--text); margin: 0; }
+.container { display: flex; justify-content: center; align-items: center; height: 100vh; }
+.scanner-box { background: var(--card); padding: 40px; border-radius: 8px; border: 1px solid #30363d; text-align: center; }
+.highlight { color: var(--green); }
+input { width: 100%; padding: 10px; margin: 20px 0; background: #010409; border: 1px solid #30363d; color: white; }
+button { width: 100%; padding: 10px; background: var(--green); color: white; border: none; cursor: pointer; font-weight: bold; }
+.report-container { max-width: 800px; margin: 40px auto; padding: 20px; }
+table { width: 100%; border-collapse: collapse; background: var(--card); margin-top: 10px; }
+td, th { padding: 10px; border-bottom: 1px solid #30363d; text-align: left; }
+.vuln-card { background: var(--card); padding: 15px; margin-top: 10px; border-left: 5px solid var(--green); }
+.vuln-card.high { border-color: var(--red); }
+.hidden { display: none; }
+.spinner { border: 4px solid #30363d; border-top: 4px solid var(--green); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 10px auto; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.btn-back { display: block; margin-top: 20px; color: var(--green); text-decoration: none; }
+.btn-pdf {
+    background: #c9d1d9;
+    color: #0d1117;
+    padding: 12px 24px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-right: 15px;
+    display: inline-block;
+    transition: background 0.3s;
+}
+.btn-pdf:hover { background: white; }
+/* Add these missing classes to fix visual bugs */
+.vuln-card.critical { border-color: #800080; } /* Purple for Critical */
+.vuln-card.safe { border-color: #238636; }
+
+/* Ensure the charts don't overflow */
+canvas { max-width: 100%; }
+
+/* Style the safe box properly */
+.safe-box {
+    padding: 20px;
+    background: rgba(35, 134, 54, 0.1);
+    border: 1px solid #238636;
+    color: #238636;
+    border-radius: 6px;
+    text-align: center;
+}
