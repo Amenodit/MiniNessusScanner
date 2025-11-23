@@ -10,19 +10,24 @@ import io
 app = Flask(__name__)
 app.secret_key = 'HACKATHON_SECRET_KEY'
 
+# --- ROUTE 1: LANDING PAGE ---
 @app.route('/')
 def landing():
     return render_template('landing.html')
 
+# --- ROUTE 2: DASHBOARD ---
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
 
+# --- ROUTE 3: EXECUTE SCAN ---
 @app.route('/scan', methods=['POST'])
 def scan():
     target_input = request.form.get('target')
-    if not target_input: return redirect(url_for('dashboard'))
+    if not target_input:
+        return redirect(url_for('dashboard'))
 
+    # Clean input
     target = target_input.replace('http://', '').replace('https://', '').split('/')[0]
     
     try:
@@ -34,48 +39,62 @@ def scan():
     scanner = PortScanner(target_ip)
     open_ports = scanner.run()
     
-    # Initialize Stats with ALL potential keys
+    # Initialize Data Structure
     scan_results = {
-        'target': target, 'ip': target_ip, 'open_ports': open_ports,
-        'services': {}, 'os_info': "Unknown", 'vulns': [],
+        'target': target, 
+        'ip': target_ip, 
+        'open_ports': open_ports,
+        'services': {}, 
+        'os_info': "Unknown", 
+        'vulns': [],
         'stats': {'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'safe': 0}
     }
 
     if open_ports:
+        # 2. Service Detection
         serv_det = ServiceDetector(target_ip, open_ports)
         scan_results['services'] = serv_det.run()
         
+        # 3. OS Detection
         os_det = OSDetector(target_ip)
         scan_results['os_info'] = os_det.run()
         
+        # 4. Vulnerability Checks
         vuln_scan = VulnScanner(target_ip, open_ports, scan_results['services'])
         scan_results['vulns'] = vuln_scan.run()
 
-        # Calculate Stats for the Graph (Safe Mode)
+        # 5. Calculate Stats
         for v in scan_results['vulns']:
             severity = v.get('severity', 'low').lower()
             if severity in scan_results['stats']:
                 scan_results['stats'][severity] += 1
             else:
-                # Fallback for unknown severities
                 scan_results['stats']['low'] += 1
         
         if not scan_results['vulns']:
             scan_results['stats']['safe'] = 1
 
+    # Save to session for PDF generation
     session['last_scan'] = scan_results
+    
     return render_template('report.html', data=scan_results)
 
+# --- ROUTE 4: DOWNLOAD PDF ---
 @app.route('/download_pdf')
 def download_pdf():
-    if 'last_scan' not in session: return redirect(url_for('dashboard'))
+    if 'last_scan' not in session:
+        return redirect(url_for('dashboard'))
+    
     data = session['last_scan']
     rendered_html = render_template('pdf_template.html', data=data)
+    
     pdf_buffer = io.BytesIO()
     pisa.CreatePDF(io.BytesIO(rendered_html.encode('utf-8')), dest=pdf_buffer)
+    
     response = make_response(pdf_buffer.getvalue())
     response.headers['Content-Type'] = 'application/pdf'
     response.headers['Content-Disposition'] = f'attachment; filename=Report_{data["target"]}.pdf'
+    
     return response
 
 if __name__ == '__main__':
